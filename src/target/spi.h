@@ -36,6 +36,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "general.h"
+#include "target_internal.h"
 
 #define SPI_FLASH_OPCODE_MASK      0x00ffU
 #define SPI_FLASH_OPCODE(x)        ((x)&SPI_FLASH_OPCODE_MASK)
@@ -79,10 +81,24 @@ typedef enum spi_bus {
 	SPI_BUS_INTERNAL = 1,
 } spi_bus_e;
 
+typedef struct spi_flash {
+	target_flash_s flash;
+	uint32_t page_size;
+	uint8_t sector_erase_opcode;
+
+	bool (*enter_flash_mode)(target_s *target);
+	bool (*exit_flash_mode)(target_s *target);
+	void (*read)(target_s *target, uint32_t command, target_addr_t address, void *buffer, size_t length);
+	void (*write)(target_s *target, uint32_t command, target_addr_t address, const void *buffer, size_t length);
+	void (*run_command)(target_s *target, uint32_t command, target_addr_t address);
+} spi_flash_s;
+
 void bmp_spi_init(spi_bus_e bus);
 void bmp_spi_deinit(spi_bus_e bus);
 
 void bmp_spi_chip_select(spi_device_e device, bool select);
 uint8_t bmp_spi_xfer(spi_bus_e bus, uint8_t value);
+
+bool bmp_spi_mass_erase(target_s *target);
 
 #endif /* TARGET_SPI_H */

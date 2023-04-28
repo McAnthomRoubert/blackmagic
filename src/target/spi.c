@@ -87,3 +87,36 @@ uint8_t bmp_spi_xfer(const spi_bus_e bus, const uint8_t value)
 		return espi_xfer(value);
 	return ispi_xfer(value);
 }
+
+static inline uint8_t bmp_spi_read_status(target_s *const target, const spi_flash_s *const flash)
+{
+	uint8_t status = 0;
+	/* Read the main status register of the Flash */
+	flash->read(target, SPI_FLASH_CMD_READ_STATUS, 0U, &status, sizeof(status));
+	return status;
+}
+
+/* Note: These routines assume that the first Flash registered on the target is a SPI Flash device */
+bool bmp_spi_mass_erase(target_s *const target)
+{
+	/* Extract the Flash structure and set up timeouts */
+	const spi_flash_s *const flash = (spi_flash_s *)target->flash;
+	platform_timeout_s timeout;
+	platform_timeout_set(&timeout, 500);
+	DEBUG_TARGET("Running %s\n", __func__);
+	/* Go into Flash mode and tell the Flash to enable writing */
+	flash->enter_flash_mode(target);
+	flash->run_command(target, SPI_FLASH_CMD_WRITE_ENABLE, 0U);
+	if (!(bmp_spi_read_status(target, flash) & SPI_FLASH_STATUS_WRITE_ENABLED)) {
+		flash->exit_flash_mode(target);
+		return false;
+	}
+
+	/* Execute a full chip erase and wait for the operatoin to complete */
+	flash->run_command(target, SPI_FLASH_CMD_CHIP_ERASE, 0U);
+	while (bmp_spi_read_status(target, flash) & SPI_FLASH_STATUS_BUSY)
+		target_print_progress(&timeout);
+
+	/* Finally, leave Flash mode to conclude business */
+	return flash->exit_flash_mode(target);
+}
