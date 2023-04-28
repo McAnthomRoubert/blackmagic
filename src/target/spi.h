@@ -34,6 +34,9 @@
 #ifndef TARGET_SPI_H
 #define TARGET_SPI_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #define SPI_FLASH_OPCODE_MASK      0x00ffU
 #define SPI_FLASH_OPCODE(x)        ((x)&SPI_FLASH_OPCODE_MASK)
 #define SPI_FLASH_DUMMY_MASK       0x0700U
@@ -63,5 +66,23 @@
 
 #define SPI_FLASH_STATUS_BUSY          0x01U
 #define SPI_FLASH_STATUS_WRITE_ENABLED 0x02U
+
+typedef enum spi_device {
+	SPI_DEVICE_INT_FLASH = 0,
+	SPI_DEVICE_EXT_FLASH = 1,
+	SPI_DEVICE_SDCARD = 2,
+	SPI_DEVICE_DISPLAY = 3,
+} spi_device_e;
+
+typedef enum spi_bus {
+	SPI_BUS_EXTERNAL = 0,
+	SPI_BUS_INTERNAL = 1,
+} spi_bus_e;
+
+void bmp_spi_init(spi_bus_e bus);
+void bmp_spi_deinit(spi_bus_e bus);
+
+void bmp_spi_chip_select(spi_device_e device, bool select);
+uint8_t bmp_spi_xfer(spi_bus_e bus, uint8_t value);
 
 #endif /* TARGET_SPI_H */
