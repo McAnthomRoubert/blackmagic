@@ -31,15 +31,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "spi.h"
+#if PC_HOSTED == 0
 #include "spi_bus.h"
+#endif
+#include "spi.h"
 #include "sfdp.h"
 
+#if PC_HOSTED == 0
 #include <libopencm3/stm32/rcc.h>
+#endif
 
 static bool bmp_spi_flash_erase(target_flash_s *flash, target_addr_t addr, size_t length);
 static bool bmp_spi_flash_write(target_flash_s *flash, target_addr_t dest, const void *src, size_t length);
 
+#if PC_HOSTED == 0
 void bmp_spi_init(const spi_bus_e bus)
 {
 	if (bus == SPI_BUS_EXTERNAL) {
@@ -91,6 +96,7 @@ uint8_t bmp_spi_xfer(const spi_bus_e bus, const uint8_t value)
 		return espi_xfer(value);
 	return ispi_xfer(value);
 }
+#endif
 
 static inline uint8_t bmp_spi_read_status(target_s *const target, const spi_flash_s *const flash)
 {
