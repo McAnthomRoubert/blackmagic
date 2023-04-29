@@ -99,8 +99,11 @@ typedef struct spi_flash {
 void bmp_spi_init(spi_bus_e bus);
 void bmp_spi_deinit(spi_bus_e bus);
 
-void bmp_spi_chip_select(spi_device_e device, bool select);
+void bmp_spi_chip_select(uint8_t device_select);
 uint8_t bmp_spi_xfer(spi_bus_e bus, uint8_t value);
+void bmp_spi_read(spi_bus_e bus, uint8_t device, uint16_t command, target_addr_t address, void *buffer, size_t length);
+void bmp_spi_write(
+	spi_bus_e bus, uint8_t device, uint16_t command, target_addr_t address, const void *buffer, size_t length);
 
 spi_flash_s *bmp_spi_add_flash(target_s *target, target_addr_t begin, size_t length, spi_read_func spi_read,
 	spi_write_func spi_write, spi_run_command_func spi_run_command);

@@ -72,8 +72,10 @@ void bmp_spi_deinit(const spi_bus_e bus)
 		rcc_periph_clock_disable(RCC_SPI1);
 }
 
-void bmp_spi_chip_select(const spi_device_e device, const bool select)
+void bmp_spi_chip_select(uint8_t device_select)
 {
+	const uint8_t device = device_select & 0x7fU;
+	const bool select = device_select & 0x80U;
 	switch (device) {
 	case SPI_DEVICE_INT_FLASH:
 		ispi_flash_select(select);
@@ -95,6 +97,56 @@ uint8_t bmp_spi_xfer(const spi_bus_e bus, const uint8_t value)
 	if (bus == SPI_BUS_EXTERNAL)
 		return espi_xfer(value);
 	return ispi_xfer(value);
+}
+
+static void bmp_spi_setup_xfer(
+	const spi_bus_e bus, const uint8_t device, const uint16_t command, const target_addr_t address)
+{
+	bmp_spi_chip_select(device | 0x80U);
+
+	/* Set up the instruction */
+	const uint8_t opcode = command & SPI_FLASH_OPCODE_MASK;
+	bmp_spi_xfer(bus, opcode);
+
+	if ((command & SPI_FLASH_OPCODE_MODE_MASK) == SPI_FLASH_OPCODE_3B_ADDR) {
+		/* For each byte sent here, we have to manually clean up from the controller with a read */
+		bmp_spi_xfer(bus, (address >> 16U) & 0xffU);
+		bmp_spi_xfer(bus, (address >> 8U) & 0xffU);
+		bmp_spi_xfer(bus, address & 0xffU);
+	}
+
+	const size_t dummy_length = (command & SPI_FLASH_DUMMY_MASK) >> SPI_FLASH_DUMMY_SHIFT;
+	for (size_t i = 0; i < dummy_length; ++i)
+		/* For each byte sent here, we have to manually clean up from the controller with a read */
+		bmp_spi_xfer(bus, 0);
+}
+
+void bmp_spi_read(const spi_bus_e bus, const uint8_t device, const uint16_t command, const target_addr_t address,
+	void *const buffer, const size_t length)
+{
+	/* Setup the transaction */
+	bmp_spi_setup_xfer(bus, device, command, address);
+	/* Now read back the data that elicited */
+	uint8_t *const data = (uint8_t *const)buffer;
+	for (size_t i = 0; i < length; ++i)
+		/* Do a write to read */
+		data[i] = bmp_spi_xfer(bus, 0);
+	/* Deselect the Flash */
+	bmp_spi_chip_select(device);
+}
+
+void bmp_spi_write(const spi_bus_e bus, const uint8_t device, const uint16_t command, const target_addr_t address,
+	const void *const buffer, const size_t length)
+{
+	/* Setup the transaction */
+	bmp_spi_setup_xfer(bus, device, command, address);
+	/* Now write out back the data requested */
+	uint8_t *const data = (uint8_t *const)buffer;
+	for (size_t i = 0; i < length; ++i)
+		/* Do a write to read */
+		bmp_spi_xfer(bus, data[i]);
+	/* Deselect the Flash */
+	bmp_spi_chip_select(device);
 }
 #endif
 

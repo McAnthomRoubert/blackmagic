@@ -494,9 +494,7 @@ void remote_packet_process_spi(const char *const packet, const size_t packet_len
 	/* Selects a SPI device to talk with */
 	case REMOTE_SPI_CHIP_SELECT: {
 		/* spi_bus above is actually the device ID + whether to select it */
-		const uint8_t spi_device = spi_bus & 0x7fU;
-		const bool select = spi_bus & 0x80U;
-		bmp_spi_chip_select(spi_device, select);
+		bmp_spi_chip_select(spi_bus);
 		break;
 	}
 	/* Performs a single byte SPI transfer */
