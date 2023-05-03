@@ -25,6 +25,10 @@ LDFLAGS += $(LDFLAGS_BOOT)
 CFLAGS += -DDFU_SERIAL_LENGTH=13
 endif
 
+ifdef ALTERNATIVE_PINOUT
+CFLAGS += -DALTERNATIVE_PINOUT=$(ALTERNATIVE_PINOUT)
+endif
+
 VPATH += platforms/common/stm32
 
 SRC +=               \
