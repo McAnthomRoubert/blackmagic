@@ -48,11 +48,11 @@ static bool bmp_spi_flash_write(target_flash_s *flash, target_addr_t dest, const
 void bmp_spi_init(const spi_bus_e bus)
 {
 	if (bus == SPI_BUS_EXTERNAL) {
-		rcc_periph_clock_enable(RCC_SPI2);
-		rcc_periph_reset_pulse(RST_SPI2);
-	} else {
 		rcc_periph_clock_enable(RCC_SPI1);
 		rcc_periph_reset_pulse(RST_SPI1);
+	} else {
+		rcc_periph_clock_enable(RCC_SPI2);
+		rcc_periph_reset_pulse(RST_SPI2);
 	}
 
 	const uint32_t controller = bus == SPI_BUS_EXTERNAL ? EXT_SPI : AUX_SPI;
@@ -67,9 +67,9 @@ void bmp_spi_deinit(const spi_bus_e bus)
 	spi_disable(controller);
 
 	if (bus == SPI_BUS_EXTERNAL)
-		rcc_periph_clock_disable(RCC_SPI2);
-	else
 		rcc_periph_clock_disable(RCC_SPI1);
+	else
+		rcc_periph_clock_disable(RCC_SPI2);
 }
 
 void bmp_spi_chip_select(uint8_t device_select)
